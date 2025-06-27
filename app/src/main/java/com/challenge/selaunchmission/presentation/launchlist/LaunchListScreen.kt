@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -36,8 +37,13 @@ fun LaunchListScreen(
     onEvent: suspend (LaunchListEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        onEvent(LaunchListEvent.Reload)
+    }
 
     Scaffold(
         modifier = modifier
@@ -60,7 +66,7 @@ fun LaunchListScreen(
                 .padding(
                     start = 16.dp,
                     end = 16.dp,
-                    top = paddings.calculateTopPadding() + 16.dp, // بدل Spacer خارجي
+                    top = paddings.calculateTopPadding() + 16.dp,
                     bottom = paddings.calculateBottomPadding()
                 )
         ) {
@@ -85,7 +91,7 @@ fun LaunchListScreen(
                             }
                         )
                     } else {
-                       LaunchList(
+                        LaunchList(
                             viewState = viewState,
                             onLoadMore = {
                                 scope.launch { onEvent(LaunchListEvent.LoadMore) }

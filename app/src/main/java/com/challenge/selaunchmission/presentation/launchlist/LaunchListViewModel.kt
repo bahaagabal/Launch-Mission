@@ -6,6 +6,11 @@ import com.challenge.selaunchmission.domain.GetLaunchesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -16,15 +21,12 @@ class LaunchListViewModel @Inject constructor(
     private val getLaunchesUseCase: GetLaunchesUseCase,
 ) : ViewModel() {
 
-    var state: MutableStateFlow<LaunchListViewState> = MutableStateFlow(LaunchListViewState())
+
+    private val _state = MutableStateFlow(LaunchListViewState())
+
+    var state: StateFlow<LaunchListViewState> = _state.asStateFlow()
 
     var sideEffect: MutableSharedFlow<LaunchListSideEffect> = MutableSharedFlow()
-
-    init {
-        viewModelScope.launch {
-            loadInitialLaunches()
-        }
-    }
 
     suspend fun onEvent(event: LaunchListEvent) {
         when (event) {
@@ -45,13 +47,13 @@ class LaunchListViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadInitialLaunches() {
-        state.update {
+    private fun loadInitialLaunches() = viewModelScope.launch {
+        _state.update {
             it.copy(viewState = LaunchListState.LOADING)
         }
 
         getLaunchesUseCase.execute(PAGE_SIZE, null)?.let { launchResult ->
-            state.update {
+            _state.update {
                 it.copy(
                     launches = launchResult.launches,
                     canLoadMore = launchResult.canLoadMore,
@@ -59,7 +61,7 @@ class LaunchListViewModel @Inject constructor(
                 )
             }
         } ?: run {
-            state.update {
+            _state.update {
                 it.copy(
                     launches = emptyList(),
                     canLoadMore = false,
@@ -69,12 +71,12 @@ class LaunchListViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadMoreLaunches() {
-        state.update {
+    private fun loadMoreLaunches() = viewModelScope.launch {
+        _state.update {
             it.copy(viewState = LaunchListState.PAGE_LOADING)
         }
         getLaunchesUseCase.execute(PAGE_SIZE, null)?.let { launchResult ->
-            state.update {
+            _state.update {
                 it.copy(
                     launches = state.value.launches + launchResult.launches,
                     canLoadMore = launchResult.canLoadMore,
@@ -82,7 +84,7 @@ class LaunchListViewModel @Inject constructor(
                 )
             }
         } ?: run {
-            state.update {
+            _state.update {
                 it.copy(
                     viewState = LaunchListState.PAGE_ERROR,
                 )

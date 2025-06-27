@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -55,16 +56,16 @@ fun LaunchList(
         modifier = modifier.testTag("launchList"),
         contentPadding = PaddingValues(vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        state = lazyColumnListState,
+        // state = lazyColumnListState,
     ) {
-        itemsIndexed(
+        items(
             items = viewState.launches,
-        ) { index, launch ->
+            key = { item -> item.id }
+        ) { launch ->
             ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onSelectLaunch(launch) }
-                    .lazyListItemPosition(index),
             ) {
                 ConstraintLayout(
                     modifier = Modifier
