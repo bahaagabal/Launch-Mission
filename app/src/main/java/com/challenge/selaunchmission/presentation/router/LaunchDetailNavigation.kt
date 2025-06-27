@@ -21,9 +21,7 @@ fun NavGraphBuilder.launchDetailScreen(
         val launchDetailViewModel: LaunchDetailViewModel = hiltViewModel()
         val state by launchDetailViewModel.state.collectAsStateWithLifecycle()
 
-        LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-
-        LaunchedEffect(Unit) {
+        LaunchedEffect(key1 = launchDetailViewModel) {
             launchDetailViewModel.sideEffect.collect { sideEffect ->
                 when (sideEffect) {
                     LaunchDetailSideEffect.Close -> onNavigateBack()
