@@ -1,0 +1,16 @@
+query GetLaunchInfo($launchId: ID!) {
+    launch(id: $launchId) {
+        id
+        site
+        mission {
+          name
+          missionPatch
+        }
+        rocket {
+          id
+          name
+          type
+        }
+        isBooked
+      }
+}
