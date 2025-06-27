@@ -7,14 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -27,10 +27,11 @@ import androidx.constraintlayout.compose.Dimension
 import coil.compose.AsyncImage
 import com.challenge.selaunchmission.R
 import com.challenge.selaunchmission.domain.models.LaunchSnippet
-import com.challenge.selaunchmission.presentation.extensions.lazyListItemPosition
 import com.challenge.selaunchmission.presentation.launchlist.LaunchListState
 import com.challenge.selaunchmission.presentation.launchlist.LaunchListViewModel
 import com.challenge.selaunchmission.presentation.launchlist.LaunchListViewState
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun LaunchList(
@@ -39,24 +40,28 @@ fun LaunchList(
     onLoadMore: () -> Unit,
     onSelectLaunch: (LaunchSnippet) -> Unit,
 ) {
-    val lazyColumnListState = LazyListState()
+    val lazyColumnListState = rememberLazyListState()
 
-    val shouldLoadMore: Boolean =
-        viewState.canLoadMore &&
-                (lazyColumnListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-                    ?: 0) >= (lazyColumnListState.layoutInfo.totalItemsCount - LaunchListViewModel.LOAD_MORE_WHEN_SEEING_LAST_X_ITEM)
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            onLoadMore()
-        }
+    LaunchedEffect(viewState.canLoadMore) {
+        snapshotFlow { lazyColumnListState.layoutInfo }
+            .map { layoutInfo ->
+                val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                val totalItems = layoutInfo.totalItemsCount
+                lastVisibleIndex >= totalItems - LaunchListViewModel.LOAD_MORE_WHEN_SEEING_LAST_X_ITEM
+            }
+            .distinctUntilChanged()
+            .collect { shouldLoadMore ->
+                if (shouldLoadMore && viewState.canLoadMore) {
+                    onLoadMore()
+                }
+            }
     }
 
     LazyColumn(
         modifier = modifier.testTag("launchList"),
         contentPadding = PaddingValues(vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        // state = lazyColumnListState,
+        state = lazyColumnListState,
     ) {
         items(
             items = viewState.launches,
@@ -118,15 +123,16 @@ fun LaunchList(
                 }
             }
         }
+
         if (viewState.viewState == LaunchListState.PAGE_LOADING) {
             item(key = "pageLoading") {
                 LaunchListPageLoading()
             }
-        } else if (viewState.viewState == LaunchListState.PAGE_ERROR) {
+        }
+
+        if (viewState.viewState == LaunchListState.PAGE_ERROR) {
             item(key = "pageError") {
-                LaunchListPageRetry(
-                    onLoadMore = onLoadMore,
-                )
+                LaunchListPageRetry(onLoadMore = onLoadMore)
                 LaunchedEffect(Unit) {
                     lazyColumnListState.animateScrollToItem(viewState.launches.size)
                 }

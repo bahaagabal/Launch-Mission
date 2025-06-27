@@ -6,11 +6,8 @@ import com.challenge.selaunchmission.domain.GetLaunchesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -27,6 +24,10 @@ class LaunchListViewModel @Inject constructor(
     var state: StateFlow<LaunchListViewState> = _state.asStateFlow()
 
     var sideEffect: MutableSharedFlow<LaunchListSideEffect> = MutableSharedFlow()
+
+    init {
+        loadInitialLaunches()
+    }
 
     suspend fun onEvent(event: LaunchListEvent) {
         when (event) {
