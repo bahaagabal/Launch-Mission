@@ -5,6 +5,8 @@ import com.challenge.selaunchmission.domain.GetLaunchInfoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
@@ -13,7 +15,11 @@ class LaunchDetailViewModel @Inject constructor(
     private val getLaunchInfoUseCase: GetLaunchInfoUseCase
 ) : ViewModel() {
 
-    var state: MutableStateFlow<LaunchDetailViewState> = MutableStateFlow(LaunchDetailViewState())
+    private val _state: MutableStateFlow<LaunchDetailViewState> =
+        MutableStateFlow(LaunchDetailViewState())
+
+    var state: StateFlow<LaunchDetailViewState> = _state.asStateFlow()
+
 
     var sideEffect: MutableSharedFlow<LaunchDetailSideEffect> = MutableSharedFlow()
 
@@ -28,15 +34,20 @@ class LaunchDetailViewModel @Inject constructor(
     }
 
     private suspend fun loadLaunchInfo(launchId: String) {
+        _state.update {
+            it.copy(
+                viewState = LaunchDetailState.LOADING
+            )
+        }
         getLaunchInfoUseCase.execute(launchId)?.let { launch ->
-            state.update {
+            _state.update {
                 it.copy(
                     viewState = LaunchDetailState.SHOW_DETAIL,
                     launch = launch,
                 )
             }
         } ?: run {
-            state.update {
+            _state.update {
                 it.copy(
                     viewState = LaunchDetailState.ERROR,
                     launch = null,

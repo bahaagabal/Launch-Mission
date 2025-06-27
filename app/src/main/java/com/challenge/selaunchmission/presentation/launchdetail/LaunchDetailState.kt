@@ -4,4 +4,5 @@ enum class LaunchDetailState {
     EMPTY,
     SHOW_DETAIL,
     ERROR,
+    LOADING
 }
